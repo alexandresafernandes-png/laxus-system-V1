@@ -13,9 +13,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   background-color: #080810;
@@ -25,7 +23,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle scanline texture for RPG vibe */
+/* Subtle scanline */
 body::after {
   content: '';
   position: fixed;
@@ -34,32 +32,86 @@ body::after {
     0deg,
     transparent,
     transparent 3px,
-    rgba(0, 212, 255, 0.008) 3px,
-    rgba(0, 212, 255, 0.008) 4px
+    rgba(0, 212, 255, 0.007) 3px,
+    rgba(0, 212, 255, 0.007) 4px
   );
   pointer-events: none;
   z-index: 9999;
 }
 
-::-webkit-scrollbar {
-  width: 2px;
-}
-::-webkit-scrollbar-track {
-  background: #080810;
-}
-::-webkit-scrollbar-thumb {
-  background: #1e1e3a;
-  border-radius: 2px;
-}
+::-webkit-scrollbar            { width: 2px; }
+::-webkit-scrollbar-track      { background: #080810; }
+::-webkit-scrollbar-thumb      { background: #1e1e3a; border-radius: 2px; }
+
+/* ── Animations ─────────────────────────────────────────── */
 
 @keyframes floatUp {
-  0%   { opacity: 1; transform: translateY(0) scale(1); }
-  60%  { opacity: 1; transform: translateY(-24px) scale(1.1); }
-  100% { opacity: 0; transform: translateY(-44px) scale(0.9); }
+  0%   { opacity: 1;  transform: translateY(0)    scale(1);   }
+  55%  { opacity: 1;  transform: translateY(-30px) scale(1.05); }
+  100% { opacity: 0;  transform: translateY(-56px) scale(0.9); }
 }
 
 @keyframes taskPop {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.04); }
-  100% { transform: scale(1); }
+  0%   { transform: scale(1);    }
+  35%  { transform: scale(1.05); }
+  100% { transform: scale(1);    }
+}
+
+@keyframes statFill {
+  from { width: 0%; }
+  to   { width: var(--stat-w); }
+}
+
+@keyframes particle-rise {
+  0%   { transform: translateY(0)   translateX(0);                  opacity: 0;   }
+  15%  { opacity: var(--p-opacity);                                               }
+  85%  { opacity: var(--p-opacity);                                               }
+  100% { transform: translateY(-90px) translateX(var(--p-drift));   opacity: 0;   }
+}
+
+/* ── Glitch effect for cracked streak ───────────────────── */
+
+@keyframes glitch-1 {
+  0%,100% { clip-path: inset(0 0 100% 0); transform: translate(0); }
+  10%     { clip-path: inset(15% 0 60% 0); transform: translate(-3px, 1px); }
+  30%     { clip-path: inset(60% 0 10% 0); transform: translate(2px, -1px); }
+  50%     { clip-path: inset(30% 0 40% 0); transform: translate(-2px, 0); }
+  70%     { clip-path: inset(0% 0 80% 0);  transform: translate(3px, 1px); }
+  90%     { clip-path: inset(80% 0 5% 0);  transform: translate(-1px, -1px); }
+}
+
+@keyframes glitch-2 {
+  0%,100% { clip-path: inset(0 0 100% 0); transform: translate(0); }
+  15%     { clip-path: inset(40% 0 40% 0); transform: translate(3px, -1px); }
+  45%     { clip-path: inset(5%  0 75% 0); transform: translate(-3px, 1px); }
+  75%     { clip-path: inset(70% 0 15% 0); transform: translate(2px, 0); }
+}
+
+.glitch {
+  position: relative;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.glitch::before {
+  color: #f97316;
+  animation: glitch-1 2.4s infinite steps(1);
+}
+.glitch::after {
+  color: #00d4ff;
+  animation: glitch-2 2.4s infinite steps(1);
+  animation-delay: 0.1s;
+}
+
+/* ── Aura particle container ────────────────────────────── */
+.aura-particle {
+  position: absolute;
+  border-radius: 50%;
+  animation: particle-rise var(--p-dur, 3s) ease-in-out infinite;
+  animation-delay: var(--p-delay, 0s);
+  pointer-events: none;
 }

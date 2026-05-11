@@ -1,5 +1,7 @@
 export type Rank = 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
 export type Category = 'workout' | 'money' | 'habits' | 'mind';
+export type Grade = 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+export type StreakState = 'active' | 'cracked';
 
 export interface DailyTask {
   id: string;
@@ -20,13 +22,41 @@ export interface PowerPoint {
   powerLevel: number;
 }
 
+export interface DayLog {
+  date: string;
+  completedTasks: string[];
+}
+
+export interface WeeklyReport {
+  weekEnd: string;
+  grades: {
+    consistency: Grade;
+    physical: Grade;
+    focus: Grade;
+    discipline: Grade;
+    overall: Grade;
+  };
+}
+
+export interface HunterStats {
+  str: number;
+  int: number;
+  discipline: number;
+  consistency: number;
+  focus: number;
+}
+
 export interface GameState {
   username: string;
   totalXP: number;
   categoryXP: CategoryXP;
   streak: number;
+  streakState: StreakState;
   lastCheckinDate: string;
   powerHistory: PowerPoint[];
   todayTasks: Record<string, boolean>;
   todayDate: string;
+  dailyLog: DayLog[];
+  weeklyReport: WeeklyReport | null;
+  soundEnabled: boolean;
 }
