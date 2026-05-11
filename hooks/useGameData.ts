@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GameState, CategoryXP, DayLog, StreakState, BusinessTask, BusinessDifficulty } from '@/types';
 import { DAILY_TASKS, calcPowerLevel, generateWeeklyReport, DIFFICULTY_XP, BUSINESS_XP_DAILY_CAP } from '@/utils/xp';
+import { getSession, saveProgress, clearSession, type SyncStatus } from '@/lib/sync';
 
 const STORAGE_KEY = 'laxus_v1';
 
@@ -98,12 +99,20 @@ function bumpHistory(prev: GameState, newCategoryXP: CategoryXP, today: string):
 type PowerPoint = { date: string; powerLevel: number };
 
 export function useGameData() {
-  const [state, setState] = useState<GameState | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state,      setState]      = useState<GameState | null>(null);
+  const [loading,    setLoading]    = useState(true);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('local');
 
+  const usernameRef   = useRef<string | null>(null);
+  const syncTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef    = useRef(true);
+  const didMutateRef  = useRef(false); // skip sync on initial load
+
+  // ── Init ─────────────────────────────────────────────
   useEffect(() => {
-    const raw  = localStorage.getItem(STORAGE_KEY);
-    const base = raw ? (JSON.parse(raw) as GameState) : defaultState();
+    mountedRef.current = true;
+    const raw    = localStorage.getItem(STORAGE_KEY);
+    const base   = raw ? (JSON.parse(raw) as GameState) : defaultState();
     const loaded = maybeResetDay({
       ...base,
       streakState:   base.streakState   ?? 'active',
@@ -112,9 +121,34 @@ export function useGameData() {
       soundEnabled:  base.soundEnabled  ?? false,
       businessTasks: base.businessTasks ?? [],
     });
+    const session = getSession();
+    if (session) {
+      usernameRef.current = session.username;
+      setSyncStatus('synced');
+    }
     setState(loaded);
     setLoading(false);
+    return () => {
+      mountedRef.current = false;
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    };
   }, []);
+
+  // ── Auto-sync on mutations ────────────────────────────
+  useEffect(() => {
+    if (!state || !usernameRef.current) return;
+    if (!didMutateRef.current) {
+      didMutateRef.current = true; // skip initial load
+      return;
+    }
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    setSyncStatus('syncing');
+    syncTimerRef.current = setTimeout(async () => {
+      if (!mountedRef.current || !usernameRef.current) return;
+      const ok = await saveProgress(usernameRef.current, state);
+      if (mountedRef.current) setSyncStatus(ok ? 'synced' : 'offline');
+    }, 1500);
+  }, [state]);
 
   // ── Core task toggle ──────────────────────────────────
   const toggleTask = useCallback((taskId: string) => {
@@ -139,9 +173,9 @@ export function useGameData() {
 
       return persist({
         ...prev,
-        totalXP:     newTotalXP,
-        categoryXP:  newCategoryXP,
-        todayTasks:  newTasks,
+        totalXP:      newTotalXP,
+        categoryXP:   newCategoryXP,
+        todayTasks:   newTasks,
         powerHistory: history,
         ...streakFields,
       });
@@ -173,7 +207,6 @@ export function useGameData() {
       const isCompleted = task.lastCompletedDate === today;
 
       if (isCompleted) {
-        // Un-complete: refund XP
         const newCategoryXP: CategoryXP = {
           ...prev.categoryXP,
           money: Math.max(0, prev.categoryXP.money - task.xp),
@@ -187,7 +220,6 @@ export function useGameData() {
         });
       }
 
-      // Check daily cap
       const todayBizXP = prev.businessTasks
         .filter(t => t.lastCompletedDate === today)
         .reduce((s, t) => s + t.xp, 0);
@@ -213,9 +245,9 @@ export function useGameData() {
   const deleteBusinessTask = useCallback((taskId: string) => {
     setState(prev => {
       if (!prev) return prev;
-      const task    = prev.businessTasks.find(t => t.id === taskId);
-      const today   = todayStr();
-      const refund  = task?.lastCompletedDate === today ? task.xp : 0;
+      const task   = prev.businessTasks.find(t => t.id === taskId);
+      const today  = todayStr();
+      const refund = task?.lastCompletedDate === today ? task.xp : 0;
 
       const newCategoryXP: CategoryXP = {
         ...prev.categoryXP,
@@ -238,5 +270,16 @@ export function useGameData() {
     });
   }, []);
 
-  return { state, loading, toggleTask, toggleBusinessTask, addBusinessTask, deleteBusinessTask, toggleSound };
+  const logout = useCallback(() => {
+    clearSession();
+    usernameRef.current = null;
+    setSyncStatus('local');
+    window.location.reload();
+  }, []);
+
+  return {
+    state, loading, syncStatus,
+    toggleTask, toggleBusinessTask, addBusinessTask, deleteBusinessTask, toggleSound,
+    logout,
+  };
 }

@@ -8,9 +8,10 @@ import RadarChart from '@/components/charts/RadarChart';
 import PowerLevelChart from '@/components/charts/PowerLevelChart';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import AuraEffect from '@/components/AuraEffect';
+import SyncBadge from '@/components/SyncBadge';
 
 export default function DashboardPage() {
-  const { state, loading } = useGameData();
+  const { state, loading, syncStatus, logout } = useGameData();
 
   const d = useMemo(() => {
     if (!state) return null;
@@ -48,15 +49,25 @@ export default function DashboardPage() {
         <div>
           <p className="text-[9px] font-mono tracking-[0.4em] mb-0.5" style={{ color: 'var(--muted)' }}>HUNTER</p>
           <h1 className="text-xl font-bold tracking-[0.15em]">{state.username}</h1>
+          <div className="mt-1"><SyncBadge status={syncStatus} /></div>
         </div>
-        <div className="text-right">
-          <div
-            className="text-3xl font-black tracking-widest leading-none"
-            style={{ color: d.rColor, textShadow: `0 0 16px ${d.rColor}` }}
-          >
-            {d.rank}
+        <div className="text-right flex flex-col items-end gap-2">
+          <div>
+            <div
+              className="text-3xl font-black tracking-widest leading-none"
+              style={{ color: d.rColor, textShadow: `0 0 16px ${d.rColor}` }}
+            >
+              {d.rank}
+            </div>
+            <p className="text-[9px] font-mono tracking-[0.4em] mt-0.5" style={{ color: 'var(--muted)' }}>RANK</p>
           </div>
-          <p className="text-[9px] font-mono tracking-[0.4em] mt-0.5" style={{ color: 'var(--muted)' }}>RANK</p>
+          <button
+            onClick={logout}
+            className="text-[8px] font-mono tracking-widest active:opacity-60 transition-opacity"
+            style={{ color: 'var(--dim)' }}
+          >
+            LOGOUT
+          </button>
         </div>
       </div>
 
