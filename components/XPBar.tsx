@@ -9,11 +9,14 @@ interface Props {
 export default function XPBar({ percent, current, needed }: Props) {
   return (
     <div className="w-full">
-      <div className="flex justify-between text-[10px] font-mono tracking-widest text-[#3a3a5a] mb-1.5">
+      <div
+        className="flex justify-between text-[10px] font-mono tracking-widest mb-1.5"
+        style={{ color: 'var(--muted)' }}
+      >
         <span>XP TO NEXT LEVEL</span>
         <span className="text-[#00d4ff]">{current} / {needed}</span>
       </div>
-      <div className="h-1 bg-[#1e1e3a] rounded-full overflow-hidden">
+      <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
         <div
           className="h-full bg-[#00d4ff] rounded-full transition-all duration-700 ease-out"
           style={{

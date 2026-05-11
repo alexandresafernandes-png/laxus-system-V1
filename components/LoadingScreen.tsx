@@ -35,9 +35,10 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#080810] transition-opacity duration-500 ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-500 ${
         fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
+      style={{ backgroundColor: 'var(--bg)' }}
     >
       {/* Logo */}
       <div className="text-center mb-14">
@@ -54,7 +55,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
 
       {/* Progress bar */}
       <div className="w-52 mb-5">
-        <div className="h-px bg-[#1e1e3a] w-full overflow-hidden">
+        <div className="h-px w-full overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
           <div
             className="h-full bg-[#00d4ff] transition-all duration-300 ease-out"
             style={{ width: `${progress}%`, boxShadow: '0 0 6px #00d4ff' }}

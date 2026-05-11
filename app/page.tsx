@@ -36,8 +36,9 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#080810] text-white px-4 pt-10 pb-4 max-w-lg mx-auto animate-fade-in"
+      className="min-h-screen text-white px-4 pt-10 pb-4 max-w-lg mx-auto animate-fade-in"
       style={{
+        background: 'var(--bg)',
         '--aura-primary':   d.aura.primary,
         '--aura-secondary': d.aura.secondary,
       } as React.CSSProperties}
@@ -45,7 +46,7 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="text-[9px] font-mono tracking-[0.4em] text-[#3a3a5a] mb-0.5">HUNTER</p>
+          <p className="text-[9px] font-mono tracking-[0.4em] mb-0.5" style={{ color: 'var(--muted)' }}>HUNTER</p>
           <h1 className="text-xl font-bold tracking-[0.15em]">{state.username}</h1>
         </div>
         <div className="text-right">
@@ -55,14 +56,14 @@ export default function DashboardPage() {
           >
             {d.rank}
           </div>
-          <p className="text-[9px] font-mono tracking-[0.4em] text-[#3a3a5a] mt-0.5">RANK</p>
+          <p className="text-[9px] font-mono tracking-[0.4em] mt-0.5" style={{ color: 'var(--muted)' }}>RANK</p>
         </div>
       </div>
 
       {/* ── Power Level ── */}
       <div className="relative text-center mb-8 py-4 overflow-hidden rounded-xl">
         <AuraEffect aura={d.aura} />
-        <p className="text-[9px] font-mono tracking-[0.6em] text-[#3a3a5a] mb-3 relative z-10">
+        <p className="text-[9px] font-mono tracking-[0.6em] mb-3 relative z-10" style={{ color: 'var(--muted)' }}>
           POWER LEVEL
         </p>
         <AnimatedNumber
@@ -72,17 +73,16 @@ export default function DashboardPage() {
           style={{ color: d.aura.primary, textShadow: d.aura.glow }}
         />
         <div className="flex items-center justify-center gap-3 mt-2 relative z-10">
-          <p className="text-[10px] font-mono tracking-[0.4em] text-[#3a3a5a]">
+          <p className="text-[10px] font-mono tracking-[0.4em]" style={{ color: 'var(--muted)' }}>
             LEVEL {d.level}
           </p>
           {d.aura.stage > 0 && (
             <span
               className="text-[8px] font-mono tracking-widest px-2 py-0.5 rounded border"
               style={{
-                color:        d.aura.primary,
-                borderColor:  `${d.aura.primary}40`,
-                background:   `${d.aura.primary}12`,
-                textShadow:   `0 0 6px ${d.aura.primary}`,
+                color:       d.aura.primary,
+                borderColor: `${d.aura.primary}40`,
+                background:  `${d.aura.primary}12`,
               }}
             >
               {d.aura.label}
@@ -98,48 +98,49 @@ export default function DashboardPage() {
 
       {/* ── Stats row ── */}
       <div className="grid grid-cols-3 gap-2 mb-5">
-        <div className="bg-[#0f0f1a] border border-[#1e1e3a] rounded-xl p-3 text-center">
+        <div className="rounded-xl p-3 text-center border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="text-xl font-black tabular-nums leading-tight" style={{ color: d.aura.primary }}>
             {state.totalXP}
           </div>
-          <div className="text-[8px] font-mono tracking-[0.25em] text-[#3a3a5a] mt-0.5">TOTAL XP</div>
+          <div className="text-[8px] font-mono tracking-[0.25em] mt-0.5" style={{ color: 'var(--muted)' }}>TOTAL XP</div>
         </div>
 
-        {/* Streak card — cracked variant */}
+        {/* Streak card */}
         <div
-          className={`bg-[#0f0f1a] border rounded-xl p-3 text-center relative overflow-hidden ${
-            isCracked ? 'border-[#f97316]/40' : 'border-[#1e1e3a]'
-          }`}
+          className="rounded-xl p-3 text-center relative overflow-hidden border"
+          style={{
+            background:  'var(--surface)',
+            borderColor: isCracked ? 'rgba(249,115,22,0.45)' : 'var(--border)',
+          }}
         >
           {isCracked && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.06) 0%, transparent 70%)' }}
-            />
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.07) 0%, transparent 70%)' }} />
           )}
           <div
             className={`text-xl font-black tabular-nums leading-tight relative ${isCracked ? 'glitch' : ''}`}
             data-text={state.streak}
-            style={{ color: isCracked ? '#f97316' : d.aura.primary, textShadow: isCracked ? '0 0 10px #f97316' : undefined }}
+            style={{ color: isCracked ? '#f97316' : d.aura.primary }}
           >
             {state.streak}
           </div>
-          <div className="text-[8px] font-mono tracking-[0.25em] mt-0.5 relative" style={{ color: isCracked ? '#f9731680' : '#3a3a5a' }}>
+          <div className="text-[8px] font-mono tracking-[0.2em] mt-0.5 relative"
+            style={{ color: isCracked ? 'rgba(249,115,22,0.7)' : 'var(--muted)' }}>
             {isCracked ? '⚠ CRACKED' : 'STREAK'}
           </div>
         </div>
 
-        <div className="bg-[#0f0f1a] border border-[#1e1e3a] rounded-xl p-3 text-center">
+        <div className="rounded-xl p-3 text-center border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="text-xl font-black tabular-nums leading-tight" style={{ color: d.aura.primary }}>
             {d.level}
           </div>
-          <div className="text-[8px] font-mono tracking-[0.25em] text-[#3a3a5a] mt-0.5">LEVEL</div>
+          <div className="text-[8px] font-mono tracking-[0.25em] mt-0.5" style={{ color: 'var(--muted)' }}>LEVEL</div>
         </div>
       </div>
 
       {/* ── Radar ── */}
-      <div className="bg-[#0f0f1a] border border-[#1e1e3a] rounded-xl p-4 mb-4">
-        <p className="text-[9px] font-mono tracking-[0.4em] text-[#3a3a5a] mb-4">STAT DISTRIBUTION</p>
+      <div className="rounded-xl p-4 mb-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <p className="text-[9px] font-mono tracking-[0.4em] mb-4" style={{ color: 'var(--muted)' }}>STAT DISTRIBUTION</p>
         <div className="flex items-center justify-between gap-4">
           <div className="flex-shrink-0">
             <RadarChart {...radar} />
@@ -154,9 +155,9 @@ export default function DashboardPage() {
               <div key={label}>
                 <div className="flex justify-between text-[9px] font-mono mb-1">
                   <span style={{ color }}>{label}</span>
-                  <span className="text-[#3a3a5a]">{val} XP</span>
+                  <span style={{ color: 'var(--muted)' }}>{val} XP</span>
                 </div>
-                <div className="h-0.5 bg-[#1e1e3a] rounded overflow-hidden">
+                <div className="h-0.5 rounded overflow-hidden" style={{ background: 'var(--border)' }}>
                   <div
                     className="h-full rounded transition-all duration-700"
                     style={{ width: `${Math.min((val / max) * 100, 100)}%`, background: color }}
@@ -169,8 +170,8 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Power History ── */}
-      <div className="bg-[#0f0f1a] border border-[#1e1e3a] rounded-xl p-4 mb-4">
-        <p className="text-[9px] font-mono tracking-[0.4em] text-[#3a3a5a] mb-3">POWER HISTORY</p>
+      <div className="rounded-xl p-4 mb-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <p className="text-[9px] font-mono tracking-[0.4em] mb-3" style={{ color: 'var(--muted)' }}>POWER HISTORY</p>
         <PowerLevelChart history={state.powerHistory} />
       </div>
 
@@ -178,17 +179,19 @@ export default function DashboardPage() {
       {state.weeklyReport && (
         <Link
           href="/report"
-          className="flex items-center justify-between w-full bg-[#0f0f1a] border border-[#1e1e3a] rounded-xl p-4 active:bg-[#131325] transition-colors"
+          className="flex items-center justify-between w-full rounded-xl p-4 border transition-colors"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
         >
           <div>
-            <p className="text-[9px] font-mono tracking-[0.4em] text-[#3a3a5a] mb-1">WEEKLY REPORT</p>
-            <p className="text-sm font-bold tracking-widest text-white">
-              OVERALL: <span style={{ color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>
+            <p className="text-[9px] font-mono tracking-[0.4em] mb-1" style={{ color: 'var(--muted)' }}>WEEKLY REPORT</p>
+            <p className="text-sm font-bold tracking-widest">
+              OVERALL:{' '}
+              <span style={{ color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>
                 {state.weeklyReport.grades.overall}
               </span>
             </p>
           </div>
-          <span className="text-[#3a3a5a] text-lg">›</span>
+          <span className="text-lg" style={{ color: 'var(--muted)' }}>›</span>
         </Link>
       )}
     </div>

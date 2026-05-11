@@ -1,15 +1,15 @@
-import type { CategoryXP, Grade, Rank, HunterStats, GameState, DayLog, WeeklyReport } from '@/types';
+import type { CategoryXP, Grade, Rank, HunterStats, GameState, DayLog, WeeklyReport, BusinessDifficulty } from '@/types';
 
 export const DAILY_TASKS = [
-  { id: 'workout_1', label: 'Workout completed',   xp: 50, category: 'workout' as const },
-  { id: 'money_1',   label: 'Worked on business',  xp: 50, category: 'money'   as const },
-  { id: 'money_2',   label: 'Deep work session',   xp: 30, category: 'money'   as const },
-  { id: 'habits_1',  label: 'Slept well',          xp: 25, category: 'habits'  as const },
-  { id: 'habits_2',  label: 'Diet clean',          xp: 25, category: 'habits'  as const },
-  { id: 'habits_3',  label: 'No smoking',          xp: 40, category: 'habits'  as const },
-  { id: 'habits_4',  label: 'No reels / TikTok',  xp: 30, category: 'habits'  as const },
-  { id: 'mind_1',    label: 'Mental check-in',     xp: 20, category: 'mind'    as const },
-  { id: 'mind_2',    label: 'Planned tomorrow',    xp: 20, category: 'mind'    as const },
+  { id: 'workout_1', label: 'Workout completed',  xp: 50, category: 'workout' as const },
+  { id: 'money_1',   label: 'Worked on business', xp: 50, category: 'money'   as const },
+  { id: 'money_2',   label: 'Deep work session',  xp: 30, category: 'money'   as const },
+  { id: 'habits_1',  label: 'Slept well',         xp: 25, category: 'habits'  as const },
+  { id: 'habits_2',  label: 'Diet clean',         xp: 25, category: 'habits'  as const },
+  { id: 'habits_3',  label: 'No smoking',         xp: 40, category: 'habits'  as const },
+  { id: 'habits_4',  label: 'No reels / TikTok', xp: 30, category: 'habits'  as const },
+  { id: 'mind_1',    label: 'Mental check-in',    xp: 20, category: 'mind'    as const },
+  { id: 'mind_2',    label: 'Planned tomorrow',   xp: 20, category: 'mind'    as const },
 ] as const;
 
 export const RADAR_MAX: CategoryXP = {
@@ -19,6 +19,34 @@ export const RADAR_MAX: CategoryXP = {
   mind:    560,
 };
 
+// ── Business tasks ───────────────────────────────────────
+export const DIFFICULTY_XP: Record<BusinessDifficulty, number> = {
+  tiny:   10,
+  small:  20,
+  medium: 40,
+  big:    75,
+  boss:   150,
+};
+
+export const DIFFICULTY_COLOR: Record<BusinessDifficulty, string> = {
+  tiny:   '#6b7280',
+  small:  '#22c55e',
+  medium: '#3b82f6',
+  big:    '#8b5cf6',
+  boss:   '#f97316',
+};
+
+export const DIFFICULTY_LABEL: Record<BusinessDifficulty, string> = {
+  tiny:   'TINY',
+  small:  'SMALL',
+  medium: 'MED',
+  big:    'BIG',
+  boss:   'BOSS',
+};
+
+export const BUSINESS_XP_DAILY_CAP = 200;
+
+// ── Core formulas ────────────────────────────────────────
 export function calcPowerLevel(xp: CategoryXP): number {
   return Math.round(
     xp.workout * 1.2 +
@@ -56,7 +84,7 @@ export const RANK_COLOR: Record<Rank, string> = {
   S: '#fbbf24',
 };
 
-// ── Hunter Stats ────────────────────────────────────────────
+// ── Hunter Stats ─────────────────────────────────────────
 export function calcHunterStats(state: Pick<GameState, 'categoryXP' | 'totalXP' | 'streak'>): HunterStats {
   const { categoryXP, totalXP, streak } = state;
   return {
@@ -68,41 +96,36 @@ export function calcHunterStats(state: Pick<GameState, 'categoryXP' | 'totalXP' 
   };
 }
 
-// ── Aura ────────────────────────────────────────────────────
+// ── Aura ─────────────────────────────────────────────────
 export type AuraStage = 0 | 1 | 2 | 3;
-
 export interface AuraConfig {
-  stage:       AuraStage;
-  primary:     string;
-  secondary:   string;
-  glow:        string;
-  label:       string;
+  stage:     AuraStage;
+  primary:   string;
+  secondary: string;
+  glow:      string;
+  label:     string;
 }
 
 export function getAura(powerLevel: number): AuraConfig {
   if (powerLevel >= 3000) return {
     stage: 3, primary: '#dc2626', secondary: '#8b5cf6',
-    glow: '0 0 40px #dc2626, 0 0 80px #8b5cf6',
-    label: 'MONARCH',
+    glow: '0 0 40px #dc2626, 0 0 80px #8b5cf6', label: 'MONARCH',
   };
   if (powerLevel >= 1500) return {
     stage: 2, primary: '#8b5cf6', secondary: '#3d6aff',
-    glow: '0 0 30px #8b5cf6, 0 0 60px #3d6aff',
-    label: 'SHADOW',
+    glow: '0 0 30px #8b5cf6, 0 0 60px #3d6aff', label: 'SHADOW',
   };
   if (powerLevel >= 500) return {
     stage: 1, primary: '#00d4ff', secondary: '#3d6aff',
-    glow: '0 0 25px #00d4ff, 0 0 50px #3d6aff',
-    label: 'AWAKENED',
+    glow: '0 0 25px #00d4ff, 0 0 50px #3d6aff', label: 'AWAKENED',
   };
   return {
     stage: 0, primary: '#00d4ff', secondary: '#1e3a5f',
-    glow: '0 0 15px #00d4ff',
-    label: 'HUNTER',
+    glow: '0 0 15px #00d4ff', label: 'HUNTER',
   };
 }
 
-// ── Weekly Report ────────────────────────────────────────────
+// ── Weekly Report ────────────────────────────────────────
 function toGrade(score: number): Grade {
   if (score >= 0.9)  return 'S';
   if (score >= 0.75) return 'A';
@@ -119,21 +142,19 @@ export function generateWeeklyReport(dailyLog: DayLog[], weekEndDate: string): W
     d.setDate(d.getDate() - i);
     days.push(d.toISOString().split('T')[0]);
   }
-
   const logs = days.map(date => dailyLog.find(l => l.date === date) ?? { date, completedTasks: [] });
 
-  const daysActive    = logs.filter(l => l.completedTasks.length > 0).length;
-  const workouts      = logs.filter(l => l.completedTasks.includes('workout_1')).length;
-  const noSmoking     = logs.filter(l => l.completedTasks.includes('habits_3')).length;
-  const noReels       = logs.filter(l => l.completedTasks.includes('habits_4')).length;
-  const habitsTotal   = logs.reduce((s, l) => s + l.completedTasks.filter(t => t.startsWith('habits_')).length, 0);
+  const daysActive  = logs.filter(l => l.completedTasks.length > 0).length;
+  const workouts    = logs.filter(l => l.completedTasks.includes('workout_1')).length;
+  const noSmoking   = logs.filter(l => l.completedTasks.includes('habits_3')).length;
+  const noReels     = logs.filter(l => l.completedTasks.includes('habits_4')).length;
+  const habitsTotal = logs.reduce((s, l) => s + l.completedTasks.filter(t => t.startsWith('habits_')).length, 0);
 
-  const consistency   = daysActive  / 7;
-  const physical      = workouts    / 7;
-  const focus         = (noSmoking + noReels) / 14;
-  const discipline    = habitsTotal / 28; // 4 habit tasks × 7 days
-
-  const avg = (consistency + physical + focus + discipline) / 4;
+  const consistency = daysActive  / 7;
+  const physical    = workouts    / 7;
+  const focus       = (noSmoking + noReels) / 14;
+  const discipline  = habitsTotal / 28;
+  const avg         = (consistency + physical + focus + discipline) / 4;
 
   return {
     weekEnd: weekEndDate,

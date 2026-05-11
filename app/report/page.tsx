@@ -30,7 +30,6 @@ export default function ReportPage() {
     const powerLevel = calcPowerLevel(state.categoryXP);
     const aura       = getAura(powerLevel);
 
-    // If no stored report, generate a preview from existing dailyLog
     const report = state.weeklyReport
       ?? generateWeeklyReport(state.dailyLog, state.todayDate);
 
@@ -44,29 +43,35 @@ export default function ReportPage() {
   const overallColor = GRADE_COLOR[overall];
 
   return (
-    <div className="min-h-screen bg-[#080810] text-white px-4 pt-10 pb-4 max-w-lg mx-auto animate-fade-in">
-
+    <div
+      className="min-h-screen text-white px-4 pt-10 pb-4 max-w-lg mx-auto animate-fade-in"
+      style={{ background: 'var(--bg)' }}
+    >
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="text-[9px] font-mono tracking-[0.5em] text-[#3a3a5a] mb-1">WEEKLY</p>
+          <p className="text-[9px] font-mono tracking-[0.5em] mb-1" style={{ color: 'var(--muted)' }}>WEEKLY</p>
           <h1 className="text-2xl font-black tracking-[0.15em]">HUNTER REPORT</h1>
         </div>
-        <Link href="/" className="text-[#3a3a5a] font-mono text-xs tracking-widest active:text-[#00d4ff]">
+        <Link
+          href="/"
+          className="font-mono text-xs tracking-widest active:text-[#00d4ff] transition-colors"
+          style={{ color: 'var(--muted)' }}
+        >
           ← BACK
         </Link>
       </div>
 
       {/* ── Overall grade card ── */}
       <div
-        className="relative bg-[#0f0f1a] border rounded-xl p-6 mb-5 overflow-hidden text-center"
-        style={{ borderColor: `${overallColor}50` }}
+        className="relative border rounded-xl p-6 mb-5 overflow-hidden text-center"
+        style={{ background: 'var(--surface)', borderColor: `${overallColor}50` }}
       >
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: `radial-gradient(ellipse at 50% 50%, ${overallColor}0f 0%, transparent 65%)` }}
         />
-        <p className="text-[9px] font-mono tracking-[0.5em] text-[#3a3a5a] mb-3 relative z-10">
+        <p className="text-[9px] font-mono tracking-[0.5em] mb-3 relative z-10" style={{ color: 'var(--muted)' }}>
           OVERALL RANK
         </p>
         <div
@@ -84,15 +89,18 @@ export default function ReportPage() {
         >
           {GRADE_LABELS[overall]}
         </p>
-        <p className="text-[9px] font-mono text-[#3a3a5a] mt-1 relative z-10">
+        <p className="text-[9px] font-mono mt-1 relative z-10" style={{ color: 'var(--muted)' }}>
           WEEK OF {report.weekEnd}
         </p>
       </div>
 
       {/* ── Category grades ── */}
-      <div className="bg-[#0f0f1a] border border-[#1e1e3a] rounded-xl overflow-hidden mb-4">
-        <div className="px-4 py-3 border-b border-[#1e1e3a]">
-          <p className="text-[9px] font-mono tracking-[0.4em] text-[#3a3a5a]">BREAKDOWN</p>
+      <div
+        className="border rounded-xl overflow-hidden mb-4"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+          <p className="text-[9px] font-mono tracking-[0.4em]" style={{ color: 'var(--muted)' }}>BREAKDOWN</p>
         </div>
         {REPORT_ROWS.map(({ key, label }, idx) => {
           const grade = report.grades[key] as Grade;
@@ -100,16 +108,15 @@ export default function ReportPage() {
           return (
             <div
               key={key}
-              className="flex items-center justify-between px-4 py-4 border-b border-[#1e1e3a] last:border-0"
-              style={{ animationDelay: `${idx * 0.08}s` }}
+              className="flex items-center justify-between px-4 py-4 border-b last:border-0"
+              style={{ borderColor: 'var(--border)', animationDelay: `${idx * 0.08}s` }}
             >
               <div>
                 <p className="text-xs font-mono font-bold tracking-widest text-white">{label}</p>
-                <p className="text-[9px] font-mono text-[#3a3a5a] mt-0.5">{GRADE_LABELS[grade]}</p>
+                <p className="text-[9px] font-mono mt-0.5" style={{ color: 'var(--muted)' }}>{GRADE_LABELS[grade]}</p>
               </div>
               <div className="flex items-center gap-3">
-                {/* Mini bar */}
-                <div className="w-20 h-1 bg-[#1e1e3a] rounded overflow-hidden">
+                <div className="w-20 h-1 rounded overflow-hidden" style={{ background: 'var(--border)' }}>
                   <div
                     className="h-full rounded transition-all duration-700"
                     style={{
@@ -138,7 +145,7 @@ export default function ReportPage() {
             EXCEPTIONAL PERFORMANCE. KEEP ASCENDING.
           </p>
         ) : overall === 'B' ? (
-          <p className="text-xs font-mono tracking-widest text-[#3a3a5a]">
+          <p className="text-xs font-mono tracking-widest" style={{ color: 'var(--muted)' }}>
             SOLID WEEK. PUSH HARDER NEXT TIME.
           </p>
         ) : overall === 'F' ? (
@@ -146,7 +153,7 @@ export default function ReportPage() {
             THE WEAK ARE CULLED. RISE. NOW.
           </p>
         ) : (
-          <p className="text-xs font-mono tracking-widest text-[#3a3a5a]">
+          <p className="text-xs font-mono tracking-widest" style={{ color: 'var(--muted)' }}>
             MORE CONSISTENCY UNLOCKS HIGHER RANKS.
           </p>
         )}

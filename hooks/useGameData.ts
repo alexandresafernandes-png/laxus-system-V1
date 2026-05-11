@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import type { GameState, CategoryXP, DayLog, StreakState } from '@/types';
-import { DAILY_TASKS, calcPowerLevel, generateWeeklyReport } from '@/utils/xp';
+import type { GameState, CategoryXP, DayLog, StreakState, BusinessTask, BusinessDifficulty } from '@/types';
+import { DAILY_TASKS, calcPowerLevel, generateWeeklyReport, DIFFICULTY_XP, BUSINESS_XP_DAILY_CAP } from '@/utils/xp';
 
 const STORAGE_KEY = 'laxus_v1';
 
@@ -22,18 +22,19 @@ function isSunday(dateStr: string): boolean {
 
 function defaultState(): GameState {
   return {
-    username:       'Alex',
-    totalXP:        0,
-    categoryXP:     { workout: 0, money: 0, habits: 0, mind: 0 },
-    streak:         0,
-    streakState:    'active',
-    lastCheckinDate:'',
-    powerHistory:   [],
-    todayTasks:     {},
-    todayDate:      todayStr(),
-    dailyLog:       [],
-    weeklyReport:   null,
-    soundEnabled:   false,
+    username:        'Alex',
+    totalXP:         0,
+    categoryXP:      { workout: 0, money: 0, habits: 0, mind: 0 },
+    streak:          0,
+    streakState:     'active',
+    lastCheckinDate: '',
+    powerHistory:    [],
+    todayTasks:      {},
+    todayDate:       todayStr(),
+    dailyLog:        [],
+    weeklyReport:    null,
+    soundEnabled:    false,
+    businessTasks:   [],
   };
 }
 
@@ -41,28 +42,20 @@ function maybeResetDay(state: GameState): GameState {
   const today = todayStr();
   if (state.todayDate === today) return state;
 
-  // Archive previous day into dailyLog
   const completedYesterday = Object.keys(state.todayTasks).filter(k => state.todayTasks[k]);
   const prevEntry: DayLog = { date: state.todayDate, completedTasks: completedYesterday };
   const newLog = [...(state.dailyLog ?? []), prevEntry]
     .filter(e => e.completedTasks.length > 0)
     .slice(-21);
 
-  // Streak protection
   const days = daysSince(state.lastCheckinDate);
   let newStreak     = state.streak;
   let newStreakState: StreakState = 'active';
 
-  if (days <= 1) {
-    newStreakState = 'active';
-  } else if (days === 2) {
-    newStreakState = 'cracked';          // missed 1 day — streak survives
-  } else {
-    newStreak     = 0;                  // missed 2+ days — reset
-    newStreakState = 'active';
-  }
+  if (days <= 1)      { newStreakState = 'active'; }
+  else if (days === 2){ newStreakState = 'cracked'; }
+  else                { newStreak = 0; newStreakState = 'active'; }
 
-  // Weekly report on Sundays
   const weeklyReport = isSunday(today)
     ? generateWeeklyReport(newLog, today)
     : (state.weeklyReport ?? null);
@@ -78,6 +71,32 @@ function maybeResetDay(state: GameState): GameState {
   };
 }
 
+function persist(next: GameState): GameState {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
+}
+
+function bumpStreak(prev: GameState, today: string): Pick<GameState, 'streak' | 'lastCheckinDate' | 'streakState'> {
+  if (prev.lastCheckinDate === today) return { streak: prev.streak, lastCheckinDate: prev.lastCheckinDate, streakState: prev.streakState };
+  const days = daysSince(prev.lastCheckinDate);
+  return {
+    streak:          days <= 2 ? prev.streak + 1 : 1,
+    lastCheckinDate: today,
+    streakState:     'active',
+  };
+}
+
+function bumpHistory(prev: GameState, newCategoryXP: CategoryXP, today: string): PowerPoint[] {
+  const newPower = calcPowerLevel(newCategoryXP);
+  const hist = [...prev.powerHistory];
+  const idx  = hist.findIndex(h => h.date === today);
+  if (idx >= 0) hist[idx] = { date: today, powerLevel: newPower };
+  else          hist.push({ date: today, powerLevel: newPower });
+  return hist.slice(-14);
+}
+
+type PowerPoint = { date: string; powerLevel: number };
+
 export function useGameData() {
   const [state, setState] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,22 +104,22 @@ export function useGameData() {
   useEffect(() => {
     const raw  = localStorage.getItem(STORAGE_KEY);
     const base = raw ? (JSON.parse(raw) as GameState) : defaultState();
-    // Back-fill missing fields for saved states from before this version
     const loaded = maybeResetDay({
       ...base,
-      streakState:  base.streakState  ?? 'active',
-      dailyLog:     base.dailyLog     ?? [],
-      weeklyReport: base.weeklyReport ?? null,
-      soundEnabled: base.soundEnabled ?? false,
+      streakState:   base.streakState   ?? 'active',
+      dailyLog:      base.dailyLog      ?? [],
+      weeklyReport:  base.weeklyReport  ?? null,
+      soundEnabled:  base.soundEnabled  ?? false,
+      businessTasks: base.businessTasks ?? [],
     });
     setState(loaded);
     setLoading(false);
   }, []);
 
+  // ── Core task toggle ──────────────────────────────────
   const toggleTask = useCallback((taskId: string) => {
     setState(prev => {
       if (!prev) return prev;
-
       const task = DAILY_TASKS.find(t => t.id === taskId);
       if (!task) return prev;
 
@@ -113,50 +132,111 @@ export function useGameData() {
       };
       const newTotalXP = Math.max(0, prev.totalXP + delta);
       const newTasks   = { ...prev.todayTasks, [taskId]: !wasCompleted };
+      const today      = todayStr();
 
-      const today = todayStr();
-      let newStreak     = prev.streak;
-      let newLastCheckin = prev.lastCheckinDate;
-      let newStreakState = prev.streakState;
+      const streakFields = !wasCompleted ? bumpStreak(prev, today) : { streak: prev.streak, lastCheckinDate: prev.lastCheckinDate, streakState: prev.streakState };
+      const history      = bumpHistory(prev, newCategoryXP, today);
 
-      if (!wasCompleted && prev.lastCheckinDate !== today) {
-        // First task completed today — heal cracked streak or continue
-        const days = daysSince(prev.lastCheckinDate);
-        newStreak      = days <= 2 ? prev.streak + 1 : 1;
-        newLastCheckin = today;
-        newStreakState = 'active';
+      return persist({
+        ...prev,
+        totalXP:     newTotalXP,
+        categoryXP:  newCategoryXP,
+        todayTasks:  newTasks,
+        powerHistory: history,
+        ...streakFields,
+      });
+    });
+  }, []);
+
+  // ── Business task management ──────────────────────────
+  const addBusinessTask = useCallback((label: string, difficulty: BusinessDifficulty) => {
+    setState(prev => {
+      if (!prev) return prev;
+      const task: BusinessTask = {
+        id:                `biz_${Date.now()}`,
+        label:             label.trim(),
+        difficulty,
+        xp:                DIFFICULTY_XP[difficulty],
+        lastCompletedDate: null,
+      };
+      return persist({ ...prev, businessTasks: [...prev.businessTasks, task] });
+    });
+  }, []);
+
+  const toggleBusinessTask = useCallback((taskId: string) => {
+    setState(prev => {
+      if (!prev) return prev;
+      const task  = prev.businessTasks.find(t => t.id === taskId);
+      if (!task) return prev;
+
+      const today       = todayStr();
+      const isCompleted = task.lastCompletedDate === today;
+
+      if (isCompleted) {
+        // Un-complete: refund XP
+        const newCategoryXP: CategoryXP = {
+          ...prev.categoryXP,
+          money: Math.max(0, prev.categoryXP.money - task.xp),
+        };
+        return persist({
+          ...prev,
+          businessTasks: prev.businessTasks.map(t => t.id === taskId ? { ...t, lastCompletedDate: null } : t),
+          categoryXP:    newCategoryXP,
+          totalXP:       Math.max(0, prev.totalXP - task.xp),
+          powerHistory:  bumpHistory(prev, newCategoryXP, today),
+        });
       }
 
-      const newPower = calcPowerLevel(newCategoryXP);
-      const hist     = [...prev.powerHistory];
-      const idx      = hist.findIndex(h => h.date === today);
-      if (idx >= 0) hist[idx] = { date: today, powerLevel: newPower };
-      else          hist.push({ date: today, powerLevel: newPower });
+      // Check daily cap
+      const todayBizXP = prev.businessTasks
+        .filter(t => t.lastCompletedDate === today)
+        .reduce((s, t) => s + t.xp, 0);
+      if (todayBizXP + task.xp > BUSINESS_XP_DAILY_CAP) return prev;
 
-      const next: GameState = {
-        ...prev,
-        totalXP:         newTotalXP,
-        categoryXP:      newCategoryXP,
-        todayTasks:      newTasks,
-        streak:          newStreak,
-        streakState:     newStreakState,
-        lastCheckinDate: newLastCheckin,
-        powerHistory:    hist.slice(-14),
+      const newCategoryXP: CategoryXP = {
+        ...prev.categoryXP,
+        money: prev.categoryXP.money + task.xp,
       };
+      const newTotalXP = prev.totalXP + task.xp;
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
+      return persist({
+        ...prev,
+        businessTasks: prev.businessTasks.map(t => t.id === taskId ? { ...t, lastCompletedDate: today } : t),
+        categoryXP:    newCategoryXP,
+        totalXP:       newTotalXP,
+        powerHistory:  bumpHistory(prev, newCategoryXP, today),
+        ...bumpStreak(prev, today),
+      });
+    });
+  }, []);
+
+  const deleteBusinessTask = useCallback((taskId: string) => {
+    setState(prev => {
+      if (!prev) return prev;
+      const task    = prev.businessTasks.find(t => t.id === taskId);
+      const today   = todayStr();
+      const refund  = task?.lastCompletedDate === today ? task.xp : 0;
+
+      const newCategoryXP: CategoryXP = {
+        ...prev.categoryXP,
+        money: Math.max(0, prev.categoryXP.money - refund),
+      };
+      return persist({
+        ...prev,
+        businessTasks: prev.businessTasks.filter(t => t.id !== taskId),
+        categoryXP:    newCategoryXP,
+        totalXP:       Math.max(0, prev.totalXP - refund),
+        powerHistory:  refund > 0 ? bumpHistory(prev, newCategoryXP, today) : prev.powerHistory,
+      });
     });
   }, []);
 
   const toggleSound = useCallback(() => {
     setState(prev => {
       if (!prev) return prev;
-      const next = { ...prev, soundEnabled: !prev.soundEnabled };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
+      return persist({ ...prev, soundEnabled: !prev.soundEnabled });
     });
   }, []);
 
-  return { state, loading, toggleTask, toggleSound };
+  return { state, loading, toggleTask, toggleBusinessTask, addBusinessTask, deleteBusinessTask, toggleSound };
 }
